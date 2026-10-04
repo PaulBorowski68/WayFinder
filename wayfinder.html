@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wayfinder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF3F8; --ink:#0A1A2B; --muted:#3B5066; --card:#FFFFFF; --line:#8FA5BA;
+  --btn:#0A1A2B; --btn-ink:#FFFFFF; --accent:#B34700; --ok:#0B6B3A; --focus:#0057D9; --danger:#B3261E;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#07111D; --ink:#FFFFFF; --muted:#B6C6D8; --card:#0F2236; --line:#46627F;
+    --btn:#FFC21A; --btn-ink:#07111D; --accent:#FFC21A; --ok:#4BE08A; --focus:#7DB7FF; --danger:#FF8A80;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#07111D; --ink:#FFFFFF; --muted:#B6C6D8; --card:#0F2236; --line:#46627F;
+  --btn:#FFC21A; --btn-ink:#07111D; --accent:#FFC21A; --ok:#4BE08A; --focus:#7DB7FF; --danger:#FF8A80;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:400 1.125rem/1.5 'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 56px}
+h1{font-size:2.1rem;line-height:1.1;margin:.2em 0 .1em}
+h2{font-size:1.35rem;margin:0 0 .6em}
+.sub{margin:0;color:var(--muted)}
+section{margin-top:30px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:0;background:var(--btn);color:var(--btn-ink);padding:12px 16px;z-index:5}
+.skip:focus{left:8px;top:8px}
+
+.hero{display:flex;gap:18px;align-items:center;background:var(--card);border:3px solid var(--ink);border-radius:22px;padding:18px;margin-top:20px}
+.dial{flex:0 0 112px;color:var(--ink)}
+.dest{font-size:1.65rem;line-height:1.15;font-weight:700;margin:0 0 .25em;overflow-wrap:anywhere}
+.line{font-size:1.2rem;margin:0 0 .3em}
+.meta{margin:0;font-size:.95rem;color:var(--muted)}
+#arrow{transform-origin:60px 60px;transition:transform .25s ease}
+@media (prefers-reduced-motion:reduce){#arrow{transition:none}}
+
+.btn{display:block;width:100%;min-height:64px;padding:14px 18px;font-weight:700;font-size:1.15rem;line-height:1.2;font-family:inherit;
+  background:var(--btn);color:var(--btn-ink);border:3px solid var(--btn);border-radius:16px;cursor:pointer;text-align:center}
+.btn.alt{background:transparent;color:var(--ink);border-color:var(--ink)}
+.btn.small{min-height:52px;font-size:1rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn[aria-pressed="true"]{outline:3px solid var(--ok);outline-offset:2px}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.grid .wide{grid-column:1 / -1}
+@media (max-width:420px){.grid{grid-template-columns:1fr}}
+
+form,.box{background:var(--card);border:3px solid var(--line);border-radius:18px;padding:16px;margin-top:14px}
+label{display:block;font-weight:700;margin-bottom:6px}
+input[type=text],select{width:100%;min-height:56px;font:inherit;padding:10px 14px;border-radius:12px;border:3px solid var(--ink);background:var(--bg);color:var(--ink)}
+input[type=range]{width:100%;min-height:44px}
+.row{display:flex;gap:12px;margin-top:12px}
+.row>*{flex:1}
+.check{display:flex;gap:12px;align-items:center;min-height:48px;font-weight:400}
+.check input{width:28px;height:28px;flex:none}
+
+#log{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;max-height:340px;overflow:auto}
+#log li{padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:var(--card)}
+#log li.you{border-color:var(--ink)}
+#log li.ai{border-left:8px solid var(--accent)}
+#log .who{font-weight:700;display:block;font-size:.95rem;color:var(--muted)}
+.talk{min-height:84px;font-size:1.3rem;margin-top:12px}
+.talk[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+
+#pins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+#pins li{background:var(--card);border:3px solid var(--line);border-radius:18px;padding:12px}
+.pinbar{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.pinbar .btn{width:auto;flex:1 1 120px}
+.pd{color:var(--muted);font-size:.95rem;flex:1 1 100%}
+.note{color:var(--muted)}
+.warn{border-left:8px solid var(--danger);padding-left:14px}
+details summary{min-height:48px;display:flex;align-items:center;font-weight:700;cursor:pointer}
+
+.radar{margin:0;background:var(--card);border:3px solid var(--line);border-radius:22px;padding:12px;text-align:center}
+.radar svg{display:block;width:100%;max-width:360px;margin:0 auto;height:auto}
+.radar figcaption{margin-top:6px;font-size:.95rem;color:var(--muted)}
+#demoBox h3{margin:0 0 .4em;font-size:1.2rem}
+.demo-on{border-color:var(--accent)}
+a.btn{text-decoration:none}
+</style>
+</head>
+<body>
+<a class="skip" href="#guide">Skip to the guide</a>
+<div id="live" class="sr" aria-live="polite" role="status"></div>
+
+<main>
+  <header>
+    <h1>Wayfinder</h1>
+    <p class="sub">Spoken walking directions to your saved pins and to addresses.</p>
+  </header>
+
+  <section class="hero" aria-labelledby="h-trip">
+    <h2 id="h-trip" class="sr">Current trip</h2>
+    <div class="dial" aria-hidden="true">
+      <svg viewBox="0 0 120 120" width="112" height="112">
+        <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="4" opacity=".35"/>
+        <g id="arrow" opacity=".2"><polygon points="60,12 84,70 60,58 36,70" fill="var(--accent)"/></g>
+      </svg>
+    </div>
+    <div>
+      <p class="dest" id="destName">No destination yet</p>
+      <p class="line" id="destLine">Turn on location, then choose a pin or an address.</p>
+      <p class="meta" id="gpsLine"></p>
+    </div>
+  </section>
+
+  <figure class="radar" id="radarBox" aria-hidden="true" hidden style="margin-top:20px">
+    <svg id="radar" viewBox="-110 -110 220 220"></svg>
+    <figcaption id="radarCap"></figcaption>
+  </figure>
+
+  <section aria-labelledby="h-act">
+    <h2 id="h-act">Actions</h2>
+    <button class="btn" id="btnOn" type="button">Turn on location and compass</button>
+    <button class="btn alt" id="btnDemo" type="button" style="margin-top:12px">Try a demo walk (no GPS needed)</button>
+    <div class="grid">
+      <button class="btn alt" id="btnRepeat" type="button">Repeat directions</button>
+      <button class="btn alt" id="btnStop" type="button" disabled>Stop guidance</button>
+      <button class="btn alt" id="btnWhere" type="button">Where am I?</button>
+      <button class="btn alt" id="btnPin" type="button">Drop a pin here</button>
+      <button class="btn alt wide" id="btnAddr" type="button" aria-expanded="false" aria-controls="addrForm">Go to an address</button>
+      <button class="btn alt wide" id="btnDestMaps" type="button" disabled>Open this destination in Maps</button>
+    </div>
+
+    <form id="pinForm" hidden>
+      <label for="pinName" id="pinLabel">Name this pin</label>
+      <input type="text" id="pinName" autocomplete="off" maxlength="60">
+      <div class="row">
+        <button class="btn" type="submit">Save pin</button>
+        <button class="btn alt" type="button" id="pinCancel">Cancel</button>
+      </div>
+    </form>
+
+    <form id="addrForm" hidden>
+      <label for="addr">Address or place name</label>
+      <input type="text" id="addr" autocomplete="off" placeholder="House number, street, town">
+      <p class="note" style="margin:.6em 0 0">Maps finds the real address and gives street-by-street walking directions. Wayfinder's own guide uses an AI estimate of the address, so it is best for the last stretch. You can also paste coordinates, like 45.0000, -93.0000.</p>
+      <button class="btn" type="button" id="addrMaps" style="margin-top:12px">Walking directions in Maps</button>
+      <button class="btn alt" type="submit" style="margin-top:12px">Guide me with Wayfinder (AI estimate)</button>
+      <button class="btn alt" type="button" id="addrCancel" style="margin-top:12px">Cancel</button>
+    </form>
+
+    <div class="box demo-on" id="demoBox" role="group" aria-labelledby="demoTitle" hidden>
+      <h3 id="demoTitle">Demo walk: pretend position</h3>
+      <p class="note" style="margin-top:0">You are standing at a made-up spot. Turn and walk with these buttons, or use the arrow keys (left and right turn, up walks), and listen to the guidance.</p>
+      <div class="grid">
+        <button class="btn alt" id="simL30" type="button">Turn left 30°</button>
+        <button class="btn alt" id="simR30" type="button">Turn right 30°</button>
+        <button class="btn alt" id="simL10" type="button">Nudge left 10°</button>
+        <button class="btn alt" id="simR10" type="button">Nudge right 10°</button>
+        <button class="btn wide" id="simWalk" type="button">Walk forward 10 steps</button>
+        <button class="btn alt wide" id="simExit" type="button">Exit demo</button>
+      </div>
+    </div>
+
+    <div class="box" id="pendingBox" role="group" aria-labelledby="pendingText" hidden>
+      <p id="pendingText" style="margin-top:0"></p>
+      <div class="row">
+        <button class="btn" type="button" id="pendYes">Yes, start</button>
+        <button class="btn alt" type="button" id="pendNo">No, cancel</button>
+      </div>
+      <button class="btn alt" type="button" id="pendMaps" style="margin-top:12px">Open in Maps instead</button>
+    </div>
+
+    <div class="box" id="mapsBox" role="group" aria-labelledby="mapsText" hidden>
+      <p id="mapsText" style="margin-top:0"></p>
+      <a class="btn" id="mapsGo" href="#" target="_blank" rel="noopener">Open walking directions</a>
+      <button class="btn alt" type="button" id="mapsClose" style="margin-top:12px">Dismiss</button>
+    </div>
+  </section>
+
+  <section id="guide" aria-labelledby="h-guide" tabindex="-1">
+    <h2 id="h-guide">Talk to the guide</h2>
+    <p class="note" id="aiNote">Checking whether the AI guide is available…</p>
+    <p class="note">Ask about your trip, or say things like "take me to Home" or "save a pin called Bus stop".</p>
+    <button class="btn talk" id="btnTalk" type="button" aria-pressed="false" disabled>Talk to the guide</button>
+    <form id="chatForm" style="margin-top:12px">
+      <label for="msg">Or type a message</label>
+      <input type="text" id="msg" autocomplete="off" disabled>
+      <div class="row"><button class="btn" type="submit" id="btnSend" disabled>Send</button></div>
+    </form>
+    <ul id="log" role="log" aria-live="off" aria-label="Conversation"></ul>
+  </section>
+
+  <section aria-labelledby="h-pins">
+    <h2 id="h-pins">Saved pins</h2>
+    <p class="note" id="noPins">No pins yet. Stand where you want a pin and press "Drop a pin here". Pins are saved on this device.</p>
+    <ul id="pins"></ul>
+  </section>
+
+  <section aria-labelledby="h-set">
+    <h2 id="h-set">Settings</h2>
+    <div class="box" style="margin-top:0">
+      <label class="check"><input type="checkbox" id="setVoice"> Speak out loud (turn off if you use a screen reader)</label>
+      <label class="check"><input type="checkbox" id="setTone"> Play a tone and vibrate when you face the right way</label>
+      <label for="setUnit" style="margin-top:12px">Distance units</label>
+      <select id="setUnit">
+        <option value="ft">Feet and miles</option>
+        <option value="m">Meters and kilometers</option>
+        <option value="steps">Steps (about 2.4 feet each)</option>
+      </select>
+      <label for="setRate" style="margin-top:12px">Speaking speed</label>
+      <input type="range" id="setRate" min="0.7" max="1.5" step="0.1">
+      <label for="setMaps" style="margin-top:12px">Maps app for walking directions</label>
+      <select id="setMaps">
+        <option value="auto">Automatic for this phone</option>
+        <option value="apple">Apple Maps</option>
+        <option value="google">Google Maps</option>
+      </select>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-safe">
+    <h2 id="h-safe">Please read</h2>
+    <p class="warn">Wayfinder points you toward a pin or address in a straight line. It does not know about streets, curbs, crossings, or traffic, and GPS can be off by 10 meters or more. Keep using your cane or guide dog and listen for traffic. This is a prototype, not a replacement for a navigation aid you already trust.</p>
+    <p class="note">Apple Maps and Google Maps know about streets and crossings. Use them for the route, then come back to Wayfinder when you are close, to be guided the last few steps to an exact pin such as a door.</p>
+    <p class="note">Keep the screen on and this page open while you walk. Hold the phone flat, pointing the way you face, for the best compass reading.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+
+/* ---------- state ---------- */
+var S = {
+  pos:null, compass:null, compassAt:0, locOn:false, watchId:null,
+  dest:null, nav:false, pending:null, pendingPin:null, renameId:null,
+  lastSpoken:0, lastCat:null, aligned:false, speaking:false, uid:0,
+  voice:true, tone:true, unit:/^en-US/i.test(navigator.language||'') ? 'ft' : 'm', rate:1, seen:false,
+  metricLoc:!/^en-US/i.test(navigator.language||''),
+  pins:[], history:[], listening:false, ai:false, wl:null,
+  demo:false, simHeading:0, maps:'auto'
+};
+
+function loadJSON(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+(function init(){
+  var set = loadJSON('wf_set', {});
+  if(typeof set.voice === 'boolean') S.voice = set.voice;
+  if(typeof set.tone === 'boolean') S.tone = set.tone;
+  if(set.unit) S.unit = set.unit;
+  if(set.rate) S.rate = set.rate;
+  if(set.maps) S.maps = set.maps;
+  S.seen = !!set.seen;
+  S.pins = loadJSON('wf_pins', []);
+})();
+function saveSet(){ saveJSON('wf_set', {voice:S.voice, tone:S.tone, unit:S.unit, rate:S.rate, seen:S.seen, maps:S.maps}); }
+function savePins(){ saveJSON('wf_pins', S.pins.filter(function(p){ return !p.demo; })); }
+
+/* ---------- speech out ---------- */
+var synth = window.speechSynthesis;
+function say(text, opts){
+  opts = opts || {};
+  if(S.voice && synth){
+    if(opts.queue !== true) synth.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.rate = S.rate; u.lang = navigator.language || 'en-US';
+    var id = ++S.uid;
+    S.speaking = true;
+    u.onend = function(){ if(id === S.uid){ S.speaking = false; S.lastSpoken = Date.now(); if(opts.then) opts.then(); } };
+    u.onerror = function(){ if(id === S.uid){ S.speaking = false; } };
+    synth.speak(u);
+  } else {
+    var live = $('live'); live.textContent = '';
+    setTimeout(function(){ live.textContent = text; }, 60);
+    if(opts.then) setTimeout(opts.then, Math.min(6000, 800 + text.length * 45));
+  }
+  S.lastSpoken = Date.now();
+}
+
+/* ---------- tones, vibration, wake lock ---------- */
+var ac = null;
+function beep(freq, ms){
+  try{
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if(ac.state === 'suspended') ac.resume();
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = freq || 880; g.gain.value = 0.18;
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + (ms || 120) / 1000);
+  }catch(e){}
+}
+function vib(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+async function keepAwake(){ try{ if('wakeLock' in navigator){ S.wl = await navigator.wakeLock.request('screen'); } }catch(e){} }
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && S.locOn) keepAwake(); });
+
+/* ---------- geometry and wording ---------- */
+var R = 6371000;
+function rad(d){ return d * Math.PI / 180; }
+function deg(r){ return r * 180 / Math.PI; }
+function dist(a, b){
+  var dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  var x = Math.pow(Math.sin(dLat/2), 2) + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.pow(Math.sin(dLon/2), 2);
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function bearing(a, b){
+  var y = Math.sin(rad(b.lon - a.lon)) * Math.cos(rad(b.lat));
+  var x = Math.cos(rad(a.lat)) * Math.sin(rad(b.lat)) - Math.sin(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.cos(rad(b.lon - a.lon));
+  return (deg(Math.atan2(y, x)) + 360) % 360;
+}
+function norm180(a){ return ((a % 360) + 540) % 360 - 180; }
+var CARD = ['north','northeast','east','southeast','south','southwest','west','northwest'];
+function cardinal(h){ return CARD[Math.round(h / 45) % 8]; }
+function turnCue(rel){
+  var a = Math.abs(rel), s = rel > 0 ? 'right' : 'left';
+  if(a < 15) return 'Straight ahead';
+  if(a < 45) return 'Bear slightly ' + s;
+  if(a < 110) return 'Turn ' + s;
+  if(a < 150) return 'Turn sharply ' + s;
+  return 'Turn around';
+}
+function clockOf(rel){ return Math.round(((rel + 360) % 360) / 30) % 12 || 12; }
+
+function fmtDist(m){
+  var metric = S.unit === 'm' || (S.unit === 'steps' && S.metricLoc);
+  if(S.unit === 'steps' && m < 400){ return Math.max(5, Math.round(m / 0.72 / 5) * 5) + ' steps'; }
+  if(metric){
+    if(m < 1000) return Math.max(5, Math.round(m / 5) * 5) + ' meters';
+    return (m / 1000).toFixed(1).replace(/\.0$/, '') + ' kilometers';
+  }
+  var ft = m * 3.28084;
+  if(ft < 1000) return Math.max(10, Math.round(ft / 10) * 10) + ' feet';
+  var mi = m / 1609.34;
+  var s = mi < 10 ? mi.toFixed(1).replace(/\.0$/, '') : String(Math.round(mi));
+  return s + (s === '1' ? ' mile' : ' miles');
+}
+function fmtShort(m){
+  if(S.unit === 'm' || (S.unit === 'steps' && S.metricLoc)) return Math.round(m) + ' meters';
+  return Math.round(m * 3.28084) + ' feet';
+}
+
+function currentHeading(){
+  if(S.demo) return {h:S.simHeading, src:'demo compass'};
+  var p = S.pos;
+  if(p && p.speed != null && p.speed > 0.8 && p.heading != null && !isNaN(p.heading)) return {h:p.heading, src:'walking direction'};
+  if(S.compass != null && Date.now() - S.compassAt < 3000) return {h:S.compass, src:'compass'};
+  return null;
+}
+
+/* ---------- sensors ---------- */
+function onOrient(e){
+  var h = null;
+  if(typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;
+  else if(e.absolute && e.alpha != null) h = (360 - e.alpha) % 360;
+  if(h == null || isNaN(h)) return;
+  S.compass = S.compass == null ? h : (S.compass + norm180(h - S.compass) * 0.3 + 360) % 360;
+  S.compassAt = Date.now();
+}
+function onPos(g){
+  if(S.demo) return;
+  var c = g.coords;
+  S.pos = {lat:c.latitude, lon:c.longitude, acc:c.accuracy, heading:c.heading, speed:c.speed};
+  if(!S.locOn){
+    S.locOn = true;
+    $('btnOn').hidden = true;
+    var msg = 'Location is on. Accuracy is about ' + fmtShort(c.accuracy) + '.';
+    if(!S.seen){
+      msg += ' Quick safety note: I give straight-line direction and distance only. I cannot see streets, curbs, or traffic. Keep using your cane or guide dog.';
+      S.seen = true; saveSet();
+    }
+    say(msg);
+  }
+  render();
+}
+function onPosErr(err){
+  if(err && err.code === 1){
+    say('Location is blocked. Allow location for this page in your browser settings. If this page is open inside another app, open it in your phone browser instead.');
+    $('btnOn').hidden = false;
+  } else if(err && err.code === 2){
+    say('I cannot get a GPS signal right now. Try moving outside or near a window.');
+  }
+}
+function enableSensors(){
+  if(!navigator.geolocation){ say('This device does not support location.'); return; }
+  try{
+    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      DeviceOrientationEvent.requestPermission().catch(function(){});
+    }
+  }catch(e){}
+  window.addEventListener('deviceorientationabsolute', onOrient, true);
+  window.addEventListener('deviceorientation', onOrient, true);
+  if(S.watchId != null) navigator.geolocation.clearWatch(S.watchId);
+  S.watchId = navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
+  beep(660, 80);
+  keepAwake();
+  say('Asking for location.');
+}
+
+/* ---------- rendering ---------- */
+function setText(el, t){ if(el.textContent !== t) el.textContent = t; }
+function render(){
+  var p = S.pos, hd = currentHeading(), line, rel = null;
+  setText($('destName'), S.dest ? S.dest.name : 'No destination yet');
+  if(!S.locOn) line = 'Turn on location, then choose a pin or an address.';
+  else if(!S.dest) line = 'Location is on. Choose a pin or an address.';
+  else {
+    var d = dist(p, S.dest);
+    if(!S.nav) line = 'Guidance stopped. ' + fmtDist(d) + ' away.';
+    else if(hd){
+      rel = norm180(bearing(p, S.dest) - hd.h);
+      line = fmtDist(d) + ', at your ' + clockOf(rel) + " o'clock. " + turnCue(rel) + '.';
+    } else line = fmtDist(d) + ' away. Direction unknown until you walk a few steps.';
+  }
+  setText($('destLine'), line);
+  setText($('gpsLine'), p ? (S.demo ? 'Demo mode. ' : '') + 'GPS accuracy about ' + fmtShort(p.acc) + '. Facing ' + (hd ? cardinal(hd.h) + ' by ' + hd.src : 'unknown') + '.' : '');
+  var arrow = $('arrow');
+  if(rel != null){ arrow.style.transform = 'rotate(' + rel + 'deg)'; arrow.setAttribute('opacity', '1'); }
+  else { arrow.setAttribute('opacity', '.2'); }
+  $('btnStop').disabled = !S.nav;
+  $('btnDestMaps').disabled = !S.dest || S.demo;
+  drawRadar();
+}
+
+/* ---------- radar map (visual aid, hidden from screen readers) ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function niceMax(m){
+  var steps = [30, 60, 120, 250, 500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
+  for(var i = 0; i < steps.length; i++){ if(steps[i] >= m) return steps[i]; }
+  return steps[steps.length - 1];
+}
+function drawRadar(){
+  var box = $('radarBox');
+  if(!S.pos){ box.hidden = true; return; }
+  box.hidden = false;
+  var hd = currentHeading(), up = hd ? hd.h : 0;
+  var items = S.pins.slice();
+  if(S.dest && !items.some(function(x){ return x.id === S.dest.id; })) items.push(S.dest);
+  var focus = S.dest ? dist(S.pos, S.dest)
+    : (items.length ? Math.min.apply(null, items.map(function(x){ return dist(S.pos, x); })) : 40);
+  var maxD = niceMax(Math.max(focus * 1.25, 30));
+  var out = '';
+  out += '<circle cx="0" cy="0" r="90" fill="none" style="stroke:var(--line)" stroke-width="2"/>';
+  out += '<circle cx="0" cy="0" r="45" fill="none" style="stroke:var(--line)" stroke-width="1.5" stroke-dasharray="4 4"/>';
+  var na = rad(-up);
+  out += '<text x="' + (101 * Math.sin(na)).toFixed(1) + '" y="' + (-101 * Math.cos(na) + 4).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--muted)">N</text>';
+  items.forEach(function(it){
+    var isDest = S.dest && it.id === S.dest.id;
+    var d = dist(S.pos, it), a = rad(bearing(S.pos, it) - up);
+    var r = Math.min(d / maxD, 1) * 90;
+    var x = r * Math.sin(a), y = -r * Math.cos(a);
+    if(isDest){
+      out += '<line x1="0" y1="0" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" style="stroke:var(--accent)" stroke-width="2" stroke-dasharray="3 4"/>';
+      out += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8" style="fill:var(--accent)"/>';
+    } else {
+      out += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="5" fill="none" style="stroke:var(--ink)" stroke-width="2.5"/>';
+    }
+    var ty = y > 0 ? y + 20 : y - 12;
+    var anchor = x > 40 ? 'end' : x < -40 ? 'start' : 'middle';
+    out += '<text x="' + x.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="' + anchor + '" font-size="11" font-weight="' + (isDest ? 700 : 400) + '" style="fill:var(--ink)">' + esc(it.name.length > 16 ? it.name.slice(0, 15) + '…' : it.name) + '</text>';
+  });
+  out += '<polygon points="0,-11 8,9 0,4 -8,9" style="fill:var(--ink)"/>';
+  $('radar').innerHTML = out;
+  setText($('radarCap'), 'Outer ring is ' + fmtDist(maxD) + '. Top is ' + (hd ? 'the way you are facing.' : 'north.'));
+}
+
+/* ---------- guidance ---------- */
+function arriveRadius(){ return Math.min(25, Math.max(10, S.pos ? S.pos.acc : 10)); }
+function startNav(dest){
+  if(!S.pos){ say('I need your location first. Press Turn on location and compass.'); return; }
+  S.dest = dest; S.nav = true; S.lastCat = null; S.aligned = false;
+  hidePending();
+  say('Starting guidance to ' + dest.name + '. It is ' + fmtDist(dist(S.pos, dest)) + ' away.');
+  render();
+}
+function stopNav(){
+  if(!S.nav){ say('Guidance is not running.'); return; }
+  S.nav = false; render(); say('Guidance stopped.');
+}
+function arrive(){
+  S.nav = false; render();
+  vib([200, 100, 200, 100, 400]); beep(988, 300);
+  say('You have arrived at ' + S.dest.name + ', within about ' + fmtShort(Math.max(arriveRadius(), 5)) + '. GPS is not exact, so check around you with your cane or guide dog.');
+}
+function tick(){
+  render();
+  if(!S.nav || !S.pos || !S.dest) return;
+  var d = dist(S.pos, S.dest);
+  if(d <= arriveRadius()){ arrive(); return; }
+  var hd = currentHeading(), now = Date.now(), cat, msg;
+  if(hd){
+    var rel = norm180(bearing(S.pos, S.dest) - hd.h);
+    cat = turnCue(rel);
+    msg = cat + '. ' + fmtDist(d) + '.';
+    if(Math.abs(rel) < 10 && !S.aligned){ S.aligned = true; if(S.tone){ vib(60); beep(880, 110); } }
+    else if(Math.abs(rel) > 22){ S.aligned = false; }
+  } else {
+    cat = 'noheading';
+    msg = S.dest.name + ' is ' + fmtDist(d) + ' to the ' + cardinal(bearing(S.pos, S.dest)) + '. I cannot tell which way you face yet. Walk a few steps.';
+  }
+  if(S.speaking && now - S.lastSpoken > 15000) S.speaking = false;
+  if(S.speaking || S.listening) return;
+  var interval = d < 60 ? 5000 : d < 200 ? 8000 : 12000;
+  var changed = cat !== S.lastCat;
+  if((changed && now - S.lastSpoken > 3500) || now - S.lastSpoken > interval){
+    S.lastCat = cat;
+    say(msg);
+  }
+}
+setInterval(tick, 1000);
+
+function repeatDirections(){
+  if(!S.pos){ say('No location yet. Press Turn on location and compass.'); return; }
+  if(!S.dest){ say('No destination yet. Choose a pin or an address.'); return; }
+  var d = dist(S.pos, S.dest), hd = currentHeading();
+  if(hd){
+    var rel = norm180(bearing(S.pos, S.dest) - hd.h);
+    say(S.dest.name + ' is ' + fmtDist(d) + ' away, at your ' + clockOf(rel) + " o'clock. " + turnCue(rel) + '.');
+  } else {
+    say(S.dest.name + ' is ' + fmtDist(d) + ' to the ' + cardinal(bearing(S.pos, S.dest)) + '. I cannot tell which way you face yet.');
+  }
+}
+function whereAmI(){
+  if(!S.pos){ say('No location yet. Press Turn on location and compass.'); return; }
+  var parts = ['GPS accuracy is about ' + fmtShort(S.pos.acc) + '.'];
+  var near = null, nd = Infinity;
+  S.pins.forEach(function(p){ var d = dist(S.pos, p); if(d < nd){ nd = d; near = p; } });
+  if(near && nd < 500) parts.push('You are about ' + fmtDist(nd) + ' from your pin ' + near.name + '.');
+  var hd = currentHeading();
+  if(hd) parts.push('You are facing ' + cardinal(hd.h) + '.');
+  if(S.dest) parts.push(S.dest.name + ' is ' + fmtDist(dist(S.pos, S.dest)) + ' away.');
+  say(parts.join(' '));
+}
+
+/* ---------- pins ---------- */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+function findPin(name){
+  if(!name) return null;
+  var n = name.toLowerCase().trim();
+  var exact = S.pins.filter(function(p){ return p.name.toLowerCase() === n; })[0];
+  if(exact) return exact;
+  var inc = S.pins.filter(function(p){ var l = p.name.toLowerCase(); return l.indexOf(n) >= 0 || n.indexOf(l) >= 0; })[0];
+  if(inc) return inc;
+  var words = n.split(/\s+/);
+  return S.pins.filter(function(p){ var l = p.name.toLowerCase(); return words.some(function(w){ return w.length > 2 && l.indexOf(w) >= 0; }); })[0] || null;
+}
+function addPin(name){
+  if(!S.pos){ say('I need your location before I can drop a pin.'); return null; }
+  name = (name || '').trim() || ('Pin ' + (S.pins.length + 1));
+  var pin = {id:uid(), name:name, lat:S.pos.lat, lon:S.pos.lon, acc:S.pos.acc};
+  if(S.demo) pin.demo = true;
+  S.pins.push(pin); savePins(); renderPins();
+  var msg = 'Saved pin ' + name + '.';
+  if(S.pos.acc > 25) msg += ' GPS accuracy is only about ' + fmtShort(S.pos.acc) + ', so this pin may be off. You can drop it again later.';
+  say(msg);
+  return pin;
+}
+function showPinForm(mode, pin){
+  $('addrForm').hidden = true; $('btnAddr').setAttribute('aria-expanded', 'false');
+  S.renameId = mode === 'rename' ? pin.id : null;
+  $('pinLabel').textContent = mode === 'rename' ? 'New name for ' + pin.name : 'Name this pin';
+  $('pinName').value = mode === 'rename' ? pin.name : 'Pin ' + (S.pins.length + 1);
+  $('pinForm').hidden = false;
+  $('pinName').focus(); $('pinName').select();
+}
+function renderPins(){
+  var ul = $('pins'); ul.innerHTML = '';
+  $('noPins').hidden = S.pins.length > 0;
+  S.pins.forEach(function(p){
+    var li = document.createElement('li');
+    var go = document.createElement('button');
+    go.type = 'button'; go.className = 'btn'; go.textContent = 'Go to ' + p.name;
+    go.addEventListener('click', function(){ startNav(p); });
+    var bar = document.createElement('div'); bar.className = 'pinbar';
+    var ren = document.createElement('button');
+    ren.type = 'button'; ren.className = 'btn alt small'; ren.textContent = 'Rename';
+    ren.setAttribute('aria-label', 'Rename ' + p.name);
+    ren.addEventListener('click', function(){ showPinForm('rename', p); });
+    var del = document.createElement('button');
+    del.type = 'button'; del.className = 'btn alt small'; del.textContent = 'Delete';
+    del.setAttribute('aria-label', 'Delete ' + p.name);
+    var armed = false, t = null;
+    del.addEventListener('click', function(){
+      if(!armed){
+        armed = true; del.textContent = 'Press again to delete';
+        t = setTimeout(function(){ armed = false; del.textContent = 'Delete'; }, 4000);
+        return;
+      }
+      clearTimeout(t);
+      S.pins = S.pins.filter(function(x){ return x.id !== p.id; });
+      if(S.dest && S.dest.id === p.id){ S.nav = false; S.dest = null; }
+      savePins(); renderPins(); render(); say('Deleted ' + p.name + '.');
+    });
+    var pd = document.createElement('span'); pd.className = 'pd'; pd.dataset.id = p.id;
+    var mp = document.createElement('button');
+    mp.type = 'button'; mp.className = 'btn alt small'; mp.textContent = 'Directions in Maps';
+    mp.setAttribute('aria-label', 'Walking directions to ' + p.name + ' in Maps');
+    mp.addEventListener('click', function(){ openMaps({lat:p.lat, lon:p.lon}, p.name); });
+    bar.appendChild(mp); bar.appendChild(ren); bar.appendChild(del); bar.appendChild(pd);
+    li.appendChild(go); li.appendChild(bar); ul.appendChild(li);
+  });
+  updatePinDistances();
+}
+function updatePinDistances(){
+  var spans = document.querySelectorAll('.pd');
+  for(var i = 0; i < spans.length; i++){
+    var pin = S.pins.filter(function(x){ return x.id === spans[i].dataset.id; })[0];
+    setText(spans[i], pin && S.pos ? fmtDist(dist(S.pos, pin)) + ' away' : '');
+  }
+}
+setInterval(updatePinDistances, 5000);
+
+/* ---------- AI: sample capability ---------- */
+var samplePromise = null;
+function getSample(){
+  if(!samplePromise){
+    samplePromise = (async function(){
+      try{ return window.claude && window.claude.use ? await window.claude.use('sample') : null; }
+      catch(e){ return null; }
+    })();
+  }
+  return samplePromise;
+}
+function renderAI(){
+  var on = !!S.ai;
+  $('btnTalk').disabled = !on; $('msg').disabled = !on; $('btnSend').disabled = !on;
+  $('aiNote').textContent = on
+    ? 'The AI guide is ready. It does not know the streets, so it relies on your pins and the distances above.'
+    : 'The AI guide is not available here. Pins and spoken guidance still work.';
+}
+
+var GUIDE_RULES = [
+  'You are Wayfinder, a calm, friendly voice guide helping a blind or low-vision person walk to a destination.',
+  'Your reply is read aloud: use 1 to 3 short sentences, plain words, no markdown, no lists, no emoji.',
+  'The app only knows straight-line distance and direction to a pin or address. It has no street map and no sensors for obstacles.',
+  'Never invent street names, landmarks, obstacles, crossings, or traffic conditions, and never say a path is clear or safe.',
+  'Mention cane, guide dog, or listening for traffic only when the user asks about safety or crossing, not in every reply.',
+  'If the user wants the app to do something, set an action. Otherwise action is null.',
+  'Wayfinder only gives straight-line guidance. For anything beyond a few blocks, or when the user wants street-by-street directions or crossings, offer the "maps" action: it prepares walking directions in Apple Maps or Google Maps, and the user presses a button to open them. Suggest coming back to Wayfinder when close, for the last steps to a pin.',
+  'Return ONLY JSON, no code fences, in this exact shape:',
+  '{"reply": string, "action": null | {"type":"go_pin","name":string} | {"type":"go_address","query":string} | {"type":"save_pin","name":string} | {"type":"stop"} | {"type":"status"} | {"type":"maps","name":string}}'
+].join('\n');
+
+function context(){
+  var p = S.pos, hd = currentHeading(), l = [];
+  l.push('Location fix: ' + (p ? 'accuracy about ' + Math.round(p.acc) + ' meters' : 'none yet'));
+  l.push('Saved pins: ' + (S.pins.length ? S.pins.map(function(x){ return x.name + (p ? ' (' + fmtDist(dist(p, x)) + ' away)' : ''); }).join('; ') : 'none'));
+  if(S.dest && p){
+    var d = dist(p, S.dest);
+    var s = 'Destination: ' + S.dest.name + ', ' + fmtDist(d) + ' away, guidance ' + (S.nav ? 'active' : 'stopped');
+    if(hd){ var rel = norm180(bearing(p, S.dest) - hd.h); s += ', currently at the user\'s ' + clockOf(rel) + " o'clock"; }
+    l.push(s);
+  } else l.push('Destination: none');
+  return l.join('\n');
+}
+
+function addMsg(who, text){
+  var li = document.createElement('li'); li.className = who === 'You' ? 'you' : 'ai';
+  var w = document.createElement('span'); w.className = 'who'; w.textContent = who;
+  li.appendChild(w); li.appendChild(document.createTextNode(text));
+  $('log').appendChild(li); $('log').scrollTop = $('log').scrollHeight;
+}
+
+async function ask(text){
+  text = (text || '').trim();
+  if(!text) return;
+  addMsg('You', text);
+  var low = text.toLowerCase();
+  if(S.pending){
+    if(/^(yes|yeah|yep|yup|ok|okay|sure|go|start|confirm|do it)\b/.test(low)){ confirmPending(); return; }
+    if(/^(no|nope|cancel|never mind|nevermind)\b/.test(low)){ cancelPending(); return; }
+  }
+  if(/^(stop|end|cancel)( the)?( guidance| navigation| trip)?[.!]?$/.test(low)){ stopNav(); return; }
+  var sample = await getSample();
+  if(!sample){ addMsg('Guide', 'The AI guide is not available here.'); say('The AI guide is not available here.'); return; }
+  var turns = S.history.slice(-8);
+  while(turns.length && turns[0].role !== 'user') turns.shift();
+  turns.push({role:'user', content: GUIDE_RULES + '\n\nCONTEXT\n' + context() + '\n\nUSER SAYS: ' + text});
+  var waiting = setTimeout(function(){ say('One moment.'); }, 3000);
+  try{
+    var r = await sample.json(turns, {cache:false, modelTier:'quick'});
+    clearTimeout(waiting);
+    var reply = (r && typeof r.reply === 'string' && r.reply) ? r.reply : 'Okay.';
+    S.history.push({role:'user', content:text}, {role:'assistant', content:reply});
+    if(S.history.length > 16) S.history = S.history.slice(-16);
+    addMsg('Guide', reply);
+    var act = r && r.action;
+    say(reply, {then: act ? function(){ runAction(act); } : null});
+  }catch(e){
+    clearTimeout(waiting);
+    var m = 'Sorry, I could not reach the guide. Try again in a moment.';
+    if(e && e.code === 'not_granted') m = 'I need your permission to talk to the AI guide. Press Talk to the guide and allow it.';
+    else if(e && e.code === 'rate_limited') m = 'The guide is busy. Please wait a few seconds and try again.';
+    addMsg('Guide', m); say(m);
+  }
+}
+function runAction(a){
+  if(!a || !a.type) return;
+  if(a.type === 'go_pin'){
+    var pin = findPin(a.name);
+    if(pin) startNav(pin); else say('I could not find a pin called ' + a.name + '.');
+  } else if(a.type === 'go_address'){ goAddress(a.query);
+  } else if(a.type === 'save_pin'){ addPin(a.name);
+  } else if(a.type === 'stop'){ stopNav();
+  } else if(a.type === 'status'){ whereAmI();
+  } else if(a.type === 'maps'){
+    var mp = findPin(a.name);
+    showMapsBox(mp ? {lat:mp.lat, lon:mp.lon} : {query:a.name}, mp ? mp.name : a.name);
+  }
+}
+
+/* ---------- addresses ---------- */
+function hidePending(){ S.pending = null; $('pendingBox').hidden = true; }
+function cancelPending(){ hidePending(); say('Okay, cancelled.'); }
+function confirmPending(){ var d = S.pending; if(d) startNav(d); }
+
+async function goAddress(q){
+  q = (q || '').trim();
+  if(!q) return;
+  if(!S.pos){ say('I need your location first. Press Turn on location and compass.'); return; }
+  var res = null;
+  var m = q.match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*[, ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/);
+  if(m){
+    res = {found:true, name:'the coordinates you gave', lat:parseFloat(m[1]), lon:parseFloat(m[2]), confidence:'high'};
+  } else {
+    if(S.demo){ say('Address lookup uses your real location, so it is off in demo mode. Try pasting coordinates, or exit the demo.'); return; }
+    var sample = await getSample();
+    if(!sample){ say('Looking up addresses needs the AI guide, which is not available here. You can drop a pin at the place, or paste coordinates.'); return; }
+    say('Looking that up.');
+    var prompt = [
+      'Estimate the latitude and longitude of this place from your own knowledge. You have no map tool, so be honest about uncertainty.',
+      'Place: ' + q,
+      'The user is currently at ' + S.pos.lat.toFixed(5) + ', ' + S.pos.lon.toFixed(5) + '. If several places match, choose the one nearest to the user.',
+      'Return ONLY JSON: {"found": boolean, "name": string (short spoken name), "lat": number, "lon": number, "confidence": "high" | "medium" | "low"}.',
+      'Use "high" only if you know the exact location within about 50 meters. If you cannot place it within a few hundred meters, set found to false.'
+    ].join('\n');
+    try{
+      res = await sample.json(prompt, {modelTier:'default'});
+    }catch(e){
+      say(e && e.code === 'not_granted' ? 'I need your permission to use the AI guide for lookups.' : 'I could not look that up right now. Try again, or drop a pin at the place.');
+      return;
+    }
+  }
+  if(!res || !res.found || typeof res.lat !== 'number' || typeof res.lon !== 'number' || Math.abs(res.lat) > 90 || Math.abs(res.lon) > 180){
+    say('I could not place that address with confidence. Try adding the town, or drop a pin at the place instead.');
+    return;
+  }
+  var dest = {id:'addr', name:(res.name || q), lat:res.lat, lon:res.lon, query:(m ? null : q)};
+  var d = dist(S.pos, dest);
+  var msg = 'I found ' + dest.name + ', about ' + fmtDist(d) + ' from you.';
+  if(!m){
+    msg += ' This is an AI estimate, not a map lookup, so it could be off by a block or more' + (res.confidence === 'low' ? ', and I am not confident about it' : '') + '.';
+  }
+  if(d > 20000) msg += ' That is far away. Please check it is the right place.';
+  msg += ' Say yes or press Yes to start, or say no to cancel.';
+  S.pending = dest;
+  $('pendingText').textContent = msg;
+  $('pendingBox').hidden = false;
+  $('addrForm').hidden = true; $('btnAddr').setAttribute('aria-expanded', 'false');
+  say(msg);
+}
+
+/* ---------- voice input ---------- */
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null;
+function setListening(on){
+  S.listening = on;
+  $('btnTalk').setAttribute('aria-pressed', on ? 'true' : 'false');
+  $('btnTalk').textContent = on ? 'Listening. Press to stop' : 'Talk to the guide';
+}
+async function talk(){
+  var s = await getSample();
+  if(!s) return;
+  if(!SR){
+    say('Voice input is not available in this browser. Type a message, or use the microphone key on your phone keyboard.');
+    $('msg').focus(); return;
+  }
+  if(S.listening && rec){ try{ rec.stop(); }catch(e){} return; }
+  if(synth) synth.cancel();
+  S.speaking = false;
+  try{
+    rec = new SR();
+    rec.lang = navigator.language || 'en-US';
+    rec.interimResults = false; rec.maxAlternatives = 1;
+    rec.onstart = function(){ setListening(true); beep(740, 90); };
+    rec.onresult = function(e){ var t = e.results[0][0].transcript; ask(t); };
+    rec.onerror = function(e){
+      if(e.error === 'not-allowed' || e.error === 'service-not-allowed') say('Microphone access is blocked. Allow the microphone for this page, or type instead.');
+      else if(e.error === 'no-speech') say('I did not hear anything. Press Talk and try again.');
+    };
+    rec.onend = function(){ setListening(false); };
+    rec.start();
+  }catch(e){ setListening(false); say('I could not start the microphone. Type a message instead.'); }
+}
+
+/* ---------- Apple Maps / Google Maps handoff ---------- */
+function isApple(){
+  var ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+function mapsKind(){ return S.maps === 'auto' ? (isApple() ? 'apple' : 'google') : S.maps; }
+function mapsLabel(){ return mapsKind() === 'apple' ? 'Apple Maps' : 'Google Maps'; }
+function mapsTarget(d){ return d.query ? {query:d.query} : {lat:d.lat, lon:d.lon}; }
+function parseCoords(q){
+  var m = String(q).match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*[, ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/);
+  return m ? {lat:parseFloat(m[1]), lon:parseFloat(m[2])} : null;
+}
+function mapsUrl(t){
+  var dest = t.query ? t.query : (t.lat.toFixed(6) + ',' + t.lon.toFixed(6));
+  var e = encodeURIComponent(dest);
+  return mapsKind() === 'apple'
+    ? 'https://maps.apple.com/?daddr=' + e + '&dirflg=w'
+    : 'https://www.google.com/maps/dir/?api=1&destination=' + e + '&travelmode=walking';
+}
+function showMapsBox(t, name){
+  if(S.demo){ say('Maps is turned off in demo mode.'); return; }
+  $('mapsText').textContent = 'Walking directions to ' + name + ' are ready in ' + mapsLabel() + '.';
+  var a = $('mapsGo'); a.href = mapsUrl(t); a.textContent = 'Open in ' + mapsLabel();
+  $('mapsBox').hidden = false;
+  say('Walking directions to ' + name + ' are ready. Press Open in ' + mapsLabel() + '. Come back here when you are close, for the last steps.');
+  a.focus();
+}
+function openMaps(t, name){
+  if(S.demo){ say('Maps is turned off in demo mode.'); return; }
+  var w = null;
+  try{ w = window.open(mapsUrl(t), '_blank'); if(w) w.opener = null; }catch(e){ w = null; }
+  if(w){
+    say('Opening walking directions to ' + name + ' in ' + mapsLabel() + '. Come back here when you are close, for the last steps.');
+  } else {
+    showMapsBox(t, name);
+  }
+}
+
+/* ---------- demo walk ---------- */
+var DEMO = {lat:45.0, lon:-93.0};
+function offsetPt(p, brg, m){
+  var d = m / R, b = rad(brg), la = rad(p.lat), lo = rad(p.lon);
+  var la2 = Math.asin(Math.sin(la) * Math.cos(d) + Math.cos(la) * Math.sin(d) * Math.cos(b));
+  var lo2 = lo + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(la), Math.cos(d) - Math.sin(la) * Math.sin(la2));
+  return {lat:deg(la2), lon:deg(lo2)};
+}
+function startDemo(){
+  if(S.demo) return;
+  if(S.watchId != null && navigator.geolocation){ navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
+  S.demo = true; S.locOn = true; S.nav = false; S.dest = null; S.simHeading = 0;
+  S.pos = {lat:DEMO.lat, lon:DEMO.lon, acc:5, heading:null, speed:0};
+  var bench = offsetPt(S.pos, 40, 90), cafe = offsetPt(S.pos, 280, 180);
+  S.pins = S.pins.filter(function(p){ return !p.demo; });
+  S.pins.push({id:'demo-bench', name:'Demo bench', lat:bench.lat, lon:bench.lon, acc:5, demo:true});
+  S.pins.push({id:'demo-cafe', name:'Demo cafe', lat:cafe.lat, lon:cafe.lon, acc:5, demo:true});
+  renderPins();
+  $('btnOn').hidden = true; $('btnDemo').hidden = true; $('demoBox').hidden = false;
+  render();
+  say('Demo mode. You are at a pretend spot facing north. I will guide you to a demo bench. Turn with the buttons or arrow keys, then walk forward, and listen to how my directions change.', {
+    then: function(){ if(S.demo) startNav(S.pins.filter(function(p){ return p.id === 'demo-bench'; })[0]); }
+  });
+}
+function exitDemo(){
+  if(!S.demo) return;
+  S.demo = false; S.nav = false; S.dest = null; S.pos = null; S.locOn = false; S.compass = null;
+  S.pins = S.pins.filter(function(p){ return !p.demo; });
+  if(S.pending && S.pending.id === 'addr') hidePending();
+  renderPins();
+  $('demoBox').hidden = true; $('btnOn').hidden = false; $('btnDemo').hidden = false;
+  render();
+  say('Demo finished. Press Turn on location and compass to use your real position.');
+}
+function simTurn(delta){
+  if(!S.demo) return;
+  S.simHeading = (S.simHeading + delta + 360) % 360;
+  render();
+}
+function simWalk(steps){
+  if(!S.demo) return;
+  var p = offsetPt(S.pos, S.simHeading, steps * 0.72);
+  S.pos = {lat:p.lat, lon:p.lon, acc:5, heading:S.simHeading, speed:0};
+  render();
+}
+document.addEventListener('keydown', function(e){
+  if(!S.demo) return;
+  var t = e.target && e.target.tagName;
+  if(t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+  if(e.key === 'ArrowLeft'){ simTurn(-15); e.preventDefault(); }
+  else if(e.key === 'ArrowRight'){ simTurn(15); e.preventDefault(); }
+  else if(e.key === 'ArrowUp'){ simWalk(7); e.preventDefault(); }
+});
+
+/* ---------- wiring ---------- */
+$('btnOn').addEventListener('click', enableSensors);
+$('btnDemo').addEventListener('click', startDemo);
+$('simL30').addEventListener('click', function(){ simTurn(-30); });
+$('simR30').addEventListener('click', function(){ simTurn(30); });
+$('simL10').addEventListener('click', function(){ simTurn(-10); });
+$('simR10').addEventListener('click', function(){ simTurn(10); });
+$('simWalk').addEventListener('click', function(){ simWalk(10); });
+$('simExit').addEventListener('click', exitDemo);
+$('btnDestMaps').addEventListener('click', function(){
+  if(S.dest) openMaps(mapsTarget(S.dest), S.dest.name);
+});
+$('addrMaps').addEventListener('click', function(){
+  var q = $('addr').value.trim();
+  if(!q){ say('Type an address first.'); $('addr').focus(); return; }
+  var c = parseCoords(q);
+  openMaps(c ? c : {query:q}, q);
+});
+$('pendMaps').addEventListener('click', function(){
+  if(S.pending) openMaps(mapsTarget(S.pending), S.pending.name);
+});
+$('mapsClose').addEventListener('click', function(){ $('mapsBox').hidden = true; });
+$('setMaps').value = S.maps;
+$('setMaps').addEventListener('change', function(){ S.maps = this.value; saveSet(); say('Using ' + mapsLabel() + '.'); });
+$('btnRepeat').addEventListener('click', repeatDirections);
+$('btnStop').addEventListener('click', stopNav);
+$('btnWhere').addEventListener('click', whereAmI);
+$('btnPin').addEventListener('click', function(){
+  if(!S.pos){ say('I need your location before I can drop a pin. Press Turn on location and compass.'); return; }
+  showPinForm('new');
+});
+$('pinCancel').addEventListener('click', function(){ $('pinForm').hidden = true; $('btnPin').focus(); });
+$('pinForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var name = $('pinName').value.trim();
+  if(S.renameId){
+    var pin = S.pins.filter(function(x){ return x.id === S.renameId; })[0];
+    if(pin && name){ pin.name = name; savePins(); renderPins(); say('Renamed to ' + name + '.'); }
+    S.renameId = null;
+  } else addPin(name);
+  $('pinForm').hidden = true;
+});
+$('btnAddr').addEventListener('click', function(){
+  var show = $('addrForm').hidden;
+  $('pinForm').hidden = true;
+  $('addrForm').hidden = !show;
+  $('btnAddr').setAttribute('aria-expanded', show ? 'true' : 'false');
+  if(show) $('addr').focus();
+});
+$('addrCancel').addEventListener('click', function(){ $('addrForm').hidden = true; $('btnAddr').setAttribute('aria-expanded', 'false'); $('btnAddr').focus(); });
+$('addrForm').addEventListener('submit', function(ev){ ev.preventDefault(); goAddress($('addr').value); });
+$('pendYes').addEventListener('click', confirmPending);
+$('pendNo').addEventListener('click', cancelPending);
+$('btnTalk').addEventListener('click', talk);
+$('chatForm').addEventListener('submit', function(ev){ ev.preventDefault(); var t = $('msg').value; $('msg').value = ''; ask(t); });
+
+$('setVoice').checked = S.voice; $('setTone').checked = S.tone; $('setUnit').value = S.unit; $('setRate').value = S.rate;
+$('setVoice').addEventListener('change', function(){ S.voice = this.checked; if(!S.voice && synth) synth.cancel(); saveSet(); });
+$('setTone').addEventListener('change', function(){ S.tone = this.checked; saveSet(); });
+$('setUnit').addEventListener('change', function(){ S.unit = this.value; saveSet(); render(); updatePinDistances(); });
+$('setRate').addEventListener('change', function(){ S.rate = parseFloat(this.value); saveSet(); say('Speaking speed changed.'); });
+
+renderPins(); render(); renderAI();
+getSample().then(function(s){ S.ai = !!s; renderAI(); });
+})();
+</script>
+</body>
+</html>
